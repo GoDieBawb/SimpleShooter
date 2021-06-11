@@ -21,7 +21,9 @@ import com.jme3.math.Ray;
 import com.jme3.math.Vector3f;
 import com.jme3.post.FilterPostProcessor;
 import com.jme3.post.filters.CartoonEdgeFilter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This is the Main Class of your Game. You should only do initialization here.
@@ -33,7 +35,7 @@ public class Main extends SimpleApplication {
     InteractionManager     im;
     Node                   scene;
     Node                   cameraNode;
-    HashMap<String, Enemy> enemies;
+    ArrayList<Enemy>       enemies;
     Player                 player;
     
     public static void main(String[] args) {
@@ -58,7 +60,7 @@ public class Main extends SimpleApplication {
     private void setEdgeFilter() {
         FilterPostProcessor fpp = new FilterPostProcessor(assetManager);
         CartoonEdgeFilter toon = new CartoonEdgeFilter();
-        toon.setEdgeWidth(3);
+        toon.setEdgeWidth(2);
         fpp.addFilter(toon);
         this.getViewPort().addProcessor(fpp);
         
@@ -146,7 +148,7 @@ public class Main extends SimpleApplication {
                     //If enemy lower his health and print it
                     if (hit.getName() == null) return; //Return if null
                     if (hit.getName().contains("Enemy")) {
-                        Enemy e = enemies.get(hit.getName()); //Get the enemy from the map
+                        Enemy e = (Enemy) hit.getParent(); //Get the enemy from the map
                         e.health--; //Remove one health
                         e.makeCyan(); // Make the enemy head green when hit
                         System.out.println("Enemy Hit: " + e.health); //Print the enemies health
@@ -169,18 +171,18 @@ public class Main extends SimpleApplication {
     
     //Initializes the enemies
     private void initEnemies() {
-        enemies = new HashMap<>();
+        enemies = new ArrayList<>();
         createEnemy();
     }    
     
     private void createEnemy() {
         Enemy e = new Enemy();
-        enemies.put(e.model.getName(),e);
-        rootNode.attachChild(e.model);    
+        enemies.add(e);
+        rootNode.attachChild(e);    
     }
     
     //Enemy class
-    class Enemy {
+    class Enemy extends Node {
     
         long lastAttack = System.currentTimeMillis(); //Time of last attack
         long lastHit    = System.currentTimeMillis(); //Time of last hit taken
@@ -212,6 +214,8 @@ public class Main extends SimpleApplication {
             model.attachChild(bg);
             model.attachChild(sg);
             sg.setLocalTranslation(0,2.5f,0);
+            
+            attachChild(model);
         }        
         
         //Enemy attack method
@@ -327,17 +331,17 @@ public class Main extends SimpleApplication {
         Vector3f playerLocation = cameraNode.getLocalTranslation();
         
         //If no enemies make one
-        if (enemies.entrySet().isEmpty()) {
+        if (enemies.size() < 5) {
             createEnemy();
         }
         
-        for (HashMap.Entry mapElement : enemies.entrySet()) {
+        for (int i = 0; i < enemies.size(); i++) {
 
             //Move the enemies toward the player
-            Enemy    e =  (Enemy) mapElement.getValue();
+            Enemy    e =  enemies.get(i);
             
             if (e.health <= 0) {
-                enemies.remove(e.model.getName());
+                enemies.remove(e);
                 e.model.removeFromParent();
             }
             
